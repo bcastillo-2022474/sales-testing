@@ -18,7 +18,7 @@ const User = new Schema({
   role: {
     type: String,
     enum: ["ADMIN_ROLE", "CLIENT_ROLE"],
-    default: "ADMIN_ROLE",
+    default: "CLIENT_ROLE",
   },
   // meta data attributes
   tp_status: {
