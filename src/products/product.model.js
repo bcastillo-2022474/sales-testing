@@ -10,6 +10,7 @@ const Product = new Schema({
   category: {
     type: Schema.Types.ObjectId,
     required: true,
+    ref: "Category",
   },
   // meta data attributes
   tp_status: {

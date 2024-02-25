@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { model, Schema } from "mongoose";
 
 const Sale = new Schema({
   user: {
@@ -12,3 +12,5 @@ const Sale = new Schema({
     required: true,
   },
 });
+
+export default model("Sale", Sale);
