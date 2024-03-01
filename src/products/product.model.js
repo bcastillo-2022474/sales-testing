@@ -4,7 +4,6 @@ const Product = new Schema({
   name: {
     required: true,
     type: String,
-    unique: true,
   },
   description: String,
   category: {
@@ -17,6 +16,20 @@ const Product = new Schema({
     type: Boolean,
     default: true,
   },
+});
+
+// Indexes, to make soft delete work
+Product.index(
+  { name: 1, tp_status: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { tp_status: true },
+  },
+);
+
+Product.on("index", function (error) {
+  // This will log any indexing errors
+  console.log(error);
 });
 
 export default model("Product", Product);
