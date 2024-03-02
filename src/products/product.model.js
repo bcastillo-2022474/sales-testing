@@ -11,6 +11,14 @@ const Product = new Schema({
     required: true,
     ref: "Category",
   },
+  stock: {
+    type: Number,
+    required: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+  },
   // meta data attributes
   tp_status: {
     type: Boolean,

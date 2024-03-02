@@ -8,11 +8,37 @@ import {
   createProduct,
   deleteProduct,
   getAllProducts,
+  getOutOfStockProducts,
   getProduct,
+  getStatistics,
   updateProduct,
 } from "./product.controllers.js";
 
 const router = Router();
+
+router.get(
+  "/stats",
+  [
+    validateJwt,
+    isAdminLogged,
+    query("limit", "Limit must be an integer").optional().isNumeric(),
+    validateRequestParams,
+  ],
+  getStatistics,
+);
+
+// agotados
+router.get(
+  "/out-of-stock",
+  [
+    validateJwt,
+    isAdminLogged,
+    query("limit", "Limit must be an integer").optional().isNumeric(),
+    query("offset", "Offset must be an integer").optional().isNumeric(),
+    validateRequestParams,
+  ],
+  getOutOfStockProducts,
+);
 
 router
   .route("/")
@@ -20,8 +46,8 @@ router
     [
       validateJwt,
       isAdminLogged,
-      query("limit", "Limit must be a number").optional().isNumeric(),
-      query("offset", "Offset must be a number").optional().isNumeric(),
+      query("limit", "Limit must be an integer").optional().isNumeric(),
+      query("offset", "Offset must be an integer").optional().isNumeric(),
       validateRequestParams,
     ],
     getAllProducts,
@@ -51,6 +77,8 @@ router
         .notEmpty()
         .isLength({ max: 200, min: 10 }),
       body("category").isString().notEmpty(),
+      body("stock", "Stock must be defined and be an integer").isInt(),
+      body("price", "Price must be defined and be a number").isNumeric(),
       validateRequestParams,
     ],
     createProduct,
@@ -94,6 +122,10 @@ router
       )
         .optional()
         .isLength({ max: 200, min: 10 }),
+      body("stock", "If defined, Stock must be an integer").optional().isInt(),
+      body("price", "If defined, Price must be a number")
+        .optional()
+        .isNumeric(),
       validateRequestParams,
     ],
     updateProduct,
