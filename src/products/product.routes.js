@@ -8,7 +8,9 @@ import {
   createProduct,
   deleteProduct,
   getAllProducts,
+  getOutOfStockProducts,
   getProduct,
+  getStatistics,
   updateProduct,
 } from "./product.controllers.js";
 
@@ -22,10 +24,7 @@ router.get(
     query("limit", "Limit must be an integer").optional().isNumeric(),
     validateRequestParams,
   ],
-  async (req, res) => {
-    const { limit } = req.query;
-    res.status(200).json({ stats: "Stats" });
-  },
+  getStatistics,
 );
 
 // agotados
@@ -38,18 +37,7 @@ router.get(
     query("offset", "Offset must be an integer").optional().isNumeric(),
     validateRequestParams,
   ],
-  async (req, res) => {
-    const { limit, offset } = req.query;
-
-    const [total, products] = await Promise.allSettled([
-      Product.countDocuments({ stock: 0, tp_status: true }),
-      Product.find({ stock: 0, tp_status: true })
-        .limit(parseInt(limit))
-        .skip(parseInt(offset)),
-    ]);
-
-    res.status(200).json({ total: total.value, products: products.value });
-  },
+  getOutOfStockProducts,
 );
 
 router
