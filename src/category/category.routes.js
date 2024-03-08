@@ -4,7 +4,13 @@ import { body, param, query } from "express-validator";
 import { validateJwt } from "../middleware/validate-jwt.js";
 import { isAdminLogged } from "../middleware/is-logged.js";
 import { validateRequestParams } from "../middleware/validate-request-params.js";
-import Product from "../products/product.model.js";
+import {
+  createCategory,
+  deleteCategoryById,
+  getAllCategories,
+  getCategoryById,
+  updateCategoryById,
+} from "./category.controllers.js";
 
 const router = Router();
 
@@ -18,24 +24,7 @@ router
       query("page", "Page must be an integer").optional().isNumeric(),
       validateRequestParams,
     ],
-    async (req, res) => {
-      const { limit = 5, page = 0 } = req.query;
-
-      const query = { tp_status: true };
-      const [total, categories] = await Promise.allSettled([
-        Category.countDocuments(query)
-          .limit(limit)
-          .skip(limit * page),
-        Category.find(query)
-          .select("-tp_status -__v")
-          .limit(limit)
-          .skip(limit * page),
-      ]);
-
-      res
-        .status(200)
-        .json({ total: total.value, categories: categories.value });
-    },
+    getAllCategories,
   )
   .post(
     [
@@ -55,12 +44,7 @@ router
       }),
       validateRequestParams,
     ],
-    async (req, res) => {
-      const { name, description = "" } = req.body;
-      const category = new Category({ name, description });
-      await category.save();
-      res.status(201).json({ name, _id: category._id, description });
-    },
+    createCategory,
   );
 
 router
@@ -72,19 +56,7 @@ router
       param("id", "Id must be a valid ObjectId").isMongoId(),
       validateRequestParams,
     ],
-    async (req, res) => {
-      const { id } = req.params;
-      const category = await Category.findOne({
-        _id: id,
-        tp_status: true,
-      }).select("-tp_status -__v");
-
-      if (!category) {
-        return res.status(404).json({ message: "Category not found" });
-      }
-
-      res.status(200).json(category);
-    },
+    getCategoryById,
   )
   .put(
     [
@@ -99,32 +71,7 @@ router
         .isString(),
       validateRequestParams,
     ],
-    async (req, res) => {
-      const { id } = req.params;
-      const { name, description } = req.body;
-
-      const updatedCategory = { name, description };
-
-      Object.keys(updatedCategory).forEach((key) => {
-        if (updatedCategory[key] === undefined) {
-          delete updatedCategory[key];
-        }
-      });
-
-      const category = await Category.findOneAndUpdate(
-        {
-          _id: id,
-          tp_status: true,
-        },
-        updatedCategory,
-      ).select("-tp_status -__v");
-
-      if (!category) {
-        return res.status(404).json({ message: "Category not found" });
-      }
-
-      res.status(200).json({ ...category._doc, ...updatedCategory });
-    },
+    updateCategoryById,
   )
   .delete(
     [
@@ -137,39 +84,7 @@ router
       }),
       validateRequestParams,
     ],
-    async (req, res) => {
-      const { id } = req.params;
-
-      const DEFAULT_CATEGORY = await Category.findOne({
-        name: "Default",
-        tp_status: true,
-      });
-
-      if (!DEFAULT_CATEGORY) {
-        return res.status(500).json({
-          message:
-            "Default category not found, unable to transfer products of this category",
-        });
-      }
-
-      await Product.findOneAndUpdate(
-        {
-          category: id,
-          tp_status: true,
-        },
-        { category: DEFAULT_CATEGORY._id },
-      );
-
-      const category = await Category.findOneAndUpdate(
-        {
-          _id: id,
-          tp_status: true,
-        },
-        { tp_status: false },
-      ).select("-tp_status -__v");
-
-      res.status(200).json(category);
-    },
+    deleteCategoryById,
   );
 
 export default router;
