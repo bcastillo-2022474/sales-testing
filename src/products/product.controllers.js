@@ -2,16 +2,18 @@ import Product from "./product.model.js";
 import Category from "../category/category.model.js";
 
 export const getOutOfStockProducts = async (req, res) => {
-  const { limit, offset } = req.query;
+  const { limit = 5, page = 0 } = req.query;
 
   const [total, products] = await Promise.allSettled([
-    Product.countDocuments({ stock: 0, tp_status: true }),
+    Product.countDocuments({ stock: 0, tp_status: true })
+      .limit(limit)
+      .skip(page * limit),
     Product.find({ stock: 0, tp_status: true })
-      .limit(parseInt(limit))
-      .skip(parseInt(offset)),
+      .limit(limit)
+      .skip(page * limit),
   ]);
 
-  res.status(200).json({ total: total.value, products: products.value });
+  res.status(200).json({ total: total.value, page, products: products.value });
 };
 
 export const getStatistics = async (req, res) => {
@@ -20,21 +22,24 @@ export const getStatistics = async (req, res) => {
 };
 
 export const getAllProducts = async (req, res) => {
-  const { limit = 5, offset = 0 } = req.query;
+  const { limit = 5, page = 0 } = req.query;
 
   const query = { tp_status: true };
 
   const [total, products] = await Promise.allSettled([
-    Product.countDocuments(query),
+    Product.countDocuments(query)
+      .limit(limit)
+      .skip(page * limit),
     Product.find(query)
       .select("-tp_status -__v")
       .populate("category", "name")
       .limit(limit)
-      .skip(offset),
+      .skip(page * limit),
   ]);
 
   res.status(200).json({
     total: total.value,
+    page,
     products: products.value,
   });
 };
@@ -109,7 +114,7 @@ export const updateProduct = async (req, res) => {
   };
 
   Object.keys(updatedProduct).forEach((key) => {
-    if (!updatedProduct[key]) {
+    if (updatedProduct[key] === undefined) {
       delete updatedProduct[key];
     }
   });
@@ -122,15 +127,15 @@ export const updateProduct = async (req, res) => {
       tp_status: true,
     },
     updatedProduct,
-  );
+  ).select("-tp_status -__v");
 
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }
 
   res.status(200).json({
-    name,
-    description,
+    ...product._doc,
+    ...updatedProduct,
     category: {
       name: category.name,
     },
