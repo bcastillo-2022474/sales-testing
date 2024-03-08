@@ -4,7 +4,10 @@ const Category = new Schema({
   name: {
     type: String,
     required: true,
-    unique: true,
+  },
+  description: {
+    type: String,
+    default: "",
   },
   // meta data attributes
   tp_status: {
@@ -12,5 +15,10 @@ const Category = new Schema({
     default: true,
   },
 });
+
+Category.index(
+  { name: 1, tp_status: 1 },
+  { unique: true, partialFilterExpression: { tp_status: true } },
+);
 
 export default model("Category", Category);
