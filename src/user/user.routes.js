@@ -72,24 +72,32 @@ router
       });
       await user.save();
 
-      res.status(201).json(user);
+      res.status(201).json({ user });
     },
   );
 
 router
   .route("/:id")
-  .get(async (req, res) => {
-    const { id } = req.params;
-    const user = await User.findOne({ _id: id, tp_status: true }).select(
-      "username email role",
-    );
+  .get(
+    [
+      validateJwt,
+      isAdminLogged,
+      param("id", "Id must be a valid ObjectId").isMongoId(),
+      validateRequestParams,
+    ],
+    async (req, res) => {
+      const { id } = req.params;
+      const user = await User.findOne({ _id: id, tp_status: true }).select(
+        "username email role",
+      );
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
-    res.status(200).json(user);
-  })
+      res.status(200).json({ user });
+    },
+  )
   .put(
     [
       validateJwt,
@@ -133,13 +141,15 @@ router
       const user = await User.findOneAndUpdate(
         { _id: id, tp_status: true },
         userUpdated,
-      );
+      ).select("username email role password");
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      res.status(200).json({ ...user._doc, ...userUpdated });
+      res.status(200).json({
+        user: { ...user._doc, ...userUpdated },
+      });
     },
   )
   .delete(
@@ -154,7 +164,7 @@ router
       const user = await User.findOneAndUpdate(
         { _id: id, tp_status: true },
         { tp_status: false },
-      );
+      ).select("username email role");
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
