@@ -14,7 +14,6 @@ export const login = async (req, res) => {
     },
     {
       $project: {
-        _id: 0,
         uid: "$_id", // rename _id to uid
         username: "$username",
         email: "$email",
@@ -31,9 +30,8 @@ export const login = async (req, res) => {
     return res.status(401).json({ message: "Invalid password" });
   }
 
-  const token = await generateToken({
-    user,
-  });
+  console.log(user);
+  const token = await generateToken(user);
 
   res.status(200).json({
     user,

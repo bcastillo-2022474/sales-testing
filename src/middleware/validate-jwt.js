@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import User from "../user/user.model.js";
 
 export const validateJwt = async (req, res, next) => {
   const token = req.header("x-token");
@@ -8,7 +9,16 @@ export const validateJwt = async (req, res, next) => {
   }
 
   try {
-    const user = jwt.verify(token, process.env.SECRET_PRIVATE_KEY);
+    const { uid } = jwt.verify(token, process.env.SECRET_PRIVATE_KEY);
+    const user = await User.findOne({ _id: uid, tp_status: true });
+    console.log({ uid, user });
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: "User not found, this user might be deleted" });
+    }
+
     req.loggedUser = user;
     next();
   } catch (error) {
