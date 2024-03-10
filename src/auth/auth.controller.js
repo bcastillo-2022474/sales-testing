@@ -5,10 +5,23 @@ import { generateToken } from "../helpers/jwt.js";
 export const login = async (req, res) => {
   const { username, email, password } = req.body;
 
-  const user = await User.findOne({
-    $or: [{ username }, { email }],
-    tp_status: true,
-  }).select("-tp_status -__v");
+  const [user] = await User.aggregate([
+    {
+      $match: {
+        $or: [{ username }, { email }],
+        tp_status: true,
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        uid: "$_id", // rename _id to uid
+        username: "$username",
+        email: "$email",
+        password: "$password",
+      },
+    },
+  ]);
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });

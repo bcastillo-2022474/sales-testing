@@ -1,4 +1,6 @@
-import { Schema, model } from "mongoose";
+import { model, Schema } from "mongoose";
+
+export const [ADMIN_ROLE, CLIENT_ROLE] = ["ADMIN_ROLE", "CLIENT_ROLE"];
 
 const User = new Schema({
   email: {
@@ -17,8 +19,8 @@ const User = new Schema({
   },
   role: {
     type: String,
-    enum: ["ADMIN_ROLE", "CLIENT_ROLE"],
-    default: "CLIENT_ROLE",
+    enum: [ADMIN_ROLE, CLIENT_ROLE],
+    default: CLIENT_ROLE,
   },
   // meta data attributes
   tp_status: {
