@@ -1,6 +1,24 @@
 import Product from "./product.model.js";
 import Category from "../category/category.model.js";
 
+export const getOutOfStockProducts = async (req, res) => {
+  const { limit, offset } = req.query;
+
+  const [total, products] = await Promise.allSettled([
+    Product.countDocuments({ stock: 0, tp_status: true }),
+    Product.find({ stock: 0, tp_status: true })
+      .limit(parseInt(limit))
+      .skip(parseInt(offset)),
+  ]);
+
+  res.status(200).json({ total: total.value, products: products.value });
+};
+
+export const getStatistics = async (req, res) => {
+  const { limit } = req.query;
+  res.status(200).json({ stats: "Stats" });
+};
+
 export const getAllProducts = async (req, res) => {
   const { limit = 5, offset = 0 } = req.query;
 
@@ -22,7 +40,7 @@ export const getAllProducts = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
-  const { name, description, category: categoryName } = req.body;
+  const { name, description, category: categoryName, stock, price } = req.body;
 
   // find category
   const category = await Category.findOne({
@@ -38,6 +56,8 @@ export const createProduct = async (req, res) => {
     name,
     description,
     category: category._id,
+    stock,
+    price,
   });
   console.log(product);
 
@@ -49,14 +69,15 @@ export const createProduct = async (req, res) => {
     category: {
       name: category.name,
     },
+    stock,
+    price,
   });
 };
-
 export const getProduct = async (req, res) => {
   const { id } = req.params;
 
   const product = await Product.findOne({ _id: id, tp_status: true })
-    .select("name description category")
+    .select("name description category stock price")
     .populate("category", "name");
 
   if (!product) {
@@ -68,7 +89,7 @@ export const getProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   const { id } = req.params;
-  const { name, description, category: categoryName } = req.body;
+  const { name, description, category: categoryName, stock, price } = req.body;
 
   const category = await Category.findOne({
     name: categoryName,
@@ -79,7 +100,13 @@ export const updateProduct = async (req, res) => {
     return res.status(400).json({ message: "Category not found" });
   }
 
-  const updatedProduct = { name, description, category: category._id };
+  const updatedProduct = {
+    name,
+    description,
+    category: category._id,
+    stock,
+    price,
+  };
 
   Object.keys(updatedProduct).forEach((key) => {
     if (!updatedProduct[key]) {
