@@ -14,14 +14,52 @@ import {
 
 const router = Router();
 
+router.get(
+  "/stats",
+  [
+    validateJwt,
+    isAdminLogged,
+    query("limit", "Limit must be an integer").optional().isNumeric(),
+    validateRequestParams,
+  ],
+  async (req, res) => {
+    const { limit } = req.query;
+    res.status(200).json({ stats: "Stats" });
+  },
+);
+
+// agotados
+router.get(
+  "/out-of-stock",
+  [
+    validateJwt,
+    isAdminLogged,
+    query("limit", "Limit must be an integer").optional().isNumeric(),
+    query("offset", "Offset must be an integer").optional().isNumeric(),
+    validateRequestParams,
+  ],
+  async (req, res) => {
+    const { limit, offset } = req.query;
+
+    const [total, products] = await Promise.allSettled([
+      Product.countDocuments({ stock: 0, tp_status: true }),
+      Product.find({ stock: 0, tp_status: true })
+        .limit(parseInt(limit))
+        .skip(parseInt(offset)),
+    ]);
+
+    res.status(200).json({ total: total.value, products: products.value });
+  },
+);
+
 router
   .route("/")
   .get(
     [
       validateJwt,
       isAdminLogged,
-      query("limit", "Limit must be a number").optional().isNumeric(),
-      query("offset", "Offset must be a number").optional().isNumeric(),
+      query("limit", "Limit must be an integer").optional().isNumeric(),
+      query("offset", "Offset must be an integer").optional().isNumeric(),
       validateRequestParams,
     ],
     getAllProducts,
@@ -51,6 +89,8 @@ router
         .notEmpty()
         .isLength({ max: 200, min: 10 }),
       body("category").isString().notEmpty(),
+      body("stock", "Stock must be defined and be an integer").isInt(),
+      body("price", "Price must be defined and be a number").isNumeric(),
       validateRequestParams,
     ],
     createProduct,
@@ -94,6 +134,10 @@ router
       )
         .optional()
         .isLength({ max: 200, min: 10 }),
+      body("stock", "If defined, Stock must be an integer").optional().isInt(),
+      body("price", "If defined, Price must be a number")
+        .optional()
+        .isNumeric(),
       validateRequestParams,
     ],
     updateProduct,
